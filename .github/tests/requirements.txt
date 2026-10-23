@@ -1,0 +1,6 @@
+pytest>=7
+pytest-timeout
+setuptools>=77
+wheel
+numpy>=1.21.6
+scipy>=1.9

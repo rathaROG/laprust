@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=77", "numpy>=2.0", "Cython>=3.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+timeout = 180
+markers = [
+  "cross_package: requires both installed packages (--run-cross-package)",
+]
+
+[tool.cibuildwheel]
+build = "cp39-* cp310-* cp311-* cp312-* cp313-* cp314-* cp315-*"
+# Match LAPX's Rust coverage; musllinux ARMv7 has no native Rust host tools.
+skip = "*-win32 *-musllinux_armv7l"
+# Match LAPX's lightweight wheel checks; full suites run in tests.yaml.
+test-requires = ["numpy"]
+test-command = "python {project}/.github/tests/check_wheel.py"
+
+[tool.cibuildwheel.macos.environment]
+# Set the Rust-compatible floor for both the build and wheel-repair processes.
+# cibuildwheel raises this floor for arm64 and newer Python versions.
+MACOSX_DEPLOYMENT_TARGET = "10.12"
+
+[tool.cibuildwheel.linux]
+before-all = "curl -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable"
+
+[tool.cibuildwheel.linux.environment]
+PATH = "$HOME/.cargo/bin:$PATH"
+
+[[tool.cibuildwheel.overrides]]
+select = "cp3{12,13,14,15}-manylinux_armv7l"
+# Match LAPX: manylinux_2_31 has GCC 9; NumPy 2.5 requires GCC >= 10.3.
+environment.PIP_CONSTRAINT = "/project/.github/constraints/numpy-armv7-build.txt"
+# Overrides replace the environment table, so preserve access to Rust/Cargo.
+environment.PATH = "$HOME/.cargo/bin:$PATH"
+# Wheel tests install NumPy in the same GCC 9 image.
+test-environment.PIP_CONSTRAINT = "/project/.github/constraints/numpy-armv7-build.txt"

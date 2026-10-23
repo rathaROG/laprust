@@ -1,0 +1,64 @@
+# Python bytecode and packaging
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+.eggs/
+build/
+dist/
+wheelhouse/
+pip-wheel-metadata/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Test, lint, type-check and coverage caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.pyright/
+.tox/
+.nox/
+.hypothesis/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# Compiled extensions and native build outputs
+*.pyd
+*.so
+*.dylib
+*.o
+*.obj
+*.a
+*.lib
+*.exp
+*.pdb
+*.ilk
+cmake-build-*/
+CMakeCache.txt
+CMakeFiles/
+
+# Generated Cython sources and annotations
+src/_lapjv/_lapjv.cpp
+src/_lapjv/_lapjv.html
+
+# Rust build and profiling outputs (Cargo.lock stays tracked)
+target/
+*.profraw
+*.profdata
+
+# Benchmark output
+benchmark-results/
+
+# Editors and operating systems
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+desktop.ini

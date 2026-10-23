@@ -1,0 +1,45 @@
+name: Publish to PyPI
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: read
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - name: Check release tag against package version
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          python -c "import ast, os, pathlib; tree = ast.parse(pathlib.Path('laprust/__init__.py').read_text()); version = next(ast.literal_eval(n.value) for n in tree.body if isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id == '__version__' for t in n.targets)); assert os.environ['RELEASE_TAG'] == 'v' + version"
+  build:
+    needs: version
+    uses: ./.github/workflows/prepublish.yaml
+    with:
+      full: true
+  # Match LAPX: release wheels run installed-wheel smoke checks.
+  # Integration, native and sanitizer suites run on PRs or manual dispatch.
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/laprust
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: wheels-*
+          path: dist
+          merge-multiple: true
+      - uses: actions/download-artifact@v8
+        with:
+          name: sdist
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@release/v1

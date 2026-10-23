@@ -1,0 +1,56 @@
+name: Native checks and sanitizers
+on:
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+permissions:
+  contents: read
+concurrency:
+  group: native-${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+jobs:
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, windows-11-arm, macos-15-intel, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - name: Set up Rust
+        run: rustup toolchain install stable --profile minimal --component clippy --component rustfmt
+      - name: Check native Rust core and C boundary
+        run: |
+          cargo +stable fmt --check --manifest-path src/_lapjv/Cargo.toml
+          cargo +stable test --locked --manifest-path src/_lapjv/Cargo.toml
+          cargo +stable test --locked --all-features --manifest-path src/_lapjv/Cargo.toml
+          cargo +stable clippy --locked --all-targets --all-features --manifest-path src/_lapjv/Cargo.toml -- -D warnings
+      - name: Check Python exceptions from native status codes
+        run: |
+          python -m pip install "numpy>=2" "Cython>=3" "setuptools>=77"
+          python tests/check_native_errors.py
+  sanitizers:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        sanitizer: [address, thread]
+    env:
+      ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+      TSAN_OPTIONS: halt_on_error=1
+      RUSTFLAGS: -Zsanitizer=${{ matrix.sanitizer }} -Cdebuginfo=1
+      RUSTDOCFLAGS: -Zsanitizer=${{ matrix.sanitizer }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install nightly and standard-library sources
+        run: rustup toolchain install nightly --profile minimal --component rust-src
+      - name: Reserve a compatible address range for ThreadSanitizer
+        if: matrix.sanitizer == 'thread'
+        run: sudo sysctl vm.mmap_rnd_bits=28
+      - name: Test instrumented core, dependencies and standard library
+        run: cargo +nightly test --locked --all-features --lib -Zbuild-std --target x86_64-unknown-linux-gnu --manifest-path src/_lapjv/Cargo.toml

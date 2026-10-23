@@ -1,0 +1,72 @@
+name: Benchmark single
+on:
+  workflow_dispatch:
+    inputs:
+      counterpart_ref:
+        description: lapcpp branch, tag, or commit to compare
+        required: true
+        default: main
+      lapx_ref:
+        description: LAPX branch, tag, or commit to compare
+        required: true
+        default: v0.11.1
+      repeats:
+        description: Timing rounds (sub-millisecond cases use at least 7)
+        required: true
+        default: '5'
+permissions:
+  contents: read
+jobs:
+  benchmark:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Check out laprust at the workflow revision
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ github.sha }}
+          path: laprust
+      - name: Check out lapcpp from GitHub
+        uses: actions/checkout@v7
+        with:
+          repository: rathaROG/lapcpp
+          ref: ${{ inputs.counterpart_ref }}
+          path: lapcpp
+      - name: Check out LAPX from GitHub
+        uses: actions/checkout@v7
+        with:
+          repository: rathaROG/lapx
+          ref: ${{ inputs.lapx_ref }}
+          path: lapx
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - name: Set up Rust
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+      - name: Install the GitHub source checkouts and SciPy
+        run: >-
+          python -m pip install
+          "${{ github.workspace }}/lapcpp"
+          "${{ github.workspace }}/laprust"
+          "${{ github.workspace }}/lapx"
+          scipy
+      - name: Record revisions
+        run: |
+          git -C "${{ github.workspace }}/lapcpp" rev-parse HEAD
+          git -C "${{ github.workspace }}/laprust" rev-parse HEAD
+          git -C "${{ github.workspace }}/lapx" rev-parse HEAD
+      - name: Run five-candidate benchmark
+        working-directory: ${{ github.workspace }}/laprust
+        env:
+          BENCH_REPEATS: ${{ inputs.repeats }}
+        run: python benchmarks/ci_run.py single
+      - uses: actions/upload-artifact@v7
+        with:
+          name: single-${{ matrix.os }}
+          path: ${{ github.workspace }}/laprust/benchmark-results/*

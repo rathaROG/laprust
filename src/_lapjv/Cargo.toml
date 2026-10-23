@@ -1,0 +1,25 @@
+[package]
+name = "laprust-core"
+version = "1.0.0"
+edition = "2021"
+rust-version = "1.83"
+license = "MIT"
+publish = false
+
+[lib]
+name = "laprust_core"
+crate-type = ["staticlib", "rlib"]
+
+[dependencies]
+rayon = "1.12"
+
+[features]
+profile = []
+
+[[example]]
+name = "profile"
+required-features = ["profile"]
+
+[profile.release]
+lto = "thin"
+codegen-units = 1

@@ -1,0 +1,140 @@
+name: Build wheels
+on:
+  workflow_dispatch:
+    inputs:
+      full:
+        description: Build all Python versions (3.9-3.15) instead of the quick 3.9/3.15 check
+        type: boolean
+        default: false
+  workflow_call:
+    inputs:
+      full:
+        description: Build all supported Python versions
+        type: boolean
+        default: true
+permissions:
+  contents: read
+jobs:
+  wheels:
+    name: Wheels (${{ matrix.target.name }} / ${{ matrix.python.name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        # Keep release jobs bounded while avoiding seven serial Python builds.
+        # Manual smoke builds match LAPX's oldest/newest Python coverage.
+        # Cache keys use names; cibuildwheel selectors contain forbidden commas.
+        python: ${{ fromJSON(inputs.full && '[{"name":"cp39-cp311","build":"cp3{9,10,11}"},{"name":"cp312-cp315","build":"cp3{12,13,14,15}"}]' || '[{"name":"cp39-and-cp315","build":"cp3{9,15}"}]') }}
+        target:
+          - name: windows-amd64
+            os: windows-latest
+            arch: AMD64
+            platform: win_amd64
+            msvc_arch: x64
+            rust_target: x86_64-pc-windows-msvc
+          - name: windows-arm64
+            os: windows-latest
+            arch: ARM64
+            platform: win_arm64
+            msvc_arch: arm64
+            rust_target: aarch64-pc-windows-msvc
+          - name: manylinux-x86_64
+            os: ubuntu-latest
+            arch: x86_64
+            platform: manylinux_x86_64
+          - name: musllinux-x86_64
+            os: ubuntu-latest
+            arch: x86_64
+            platform: musllinux_x86_64
+          - name: manylinux-aarch64
+            os: ubuntu-24.04-arm
+            arch: aarch64
+            platform: manylinux_aarch64
+          - name: musllinux-aarch64
+            os: ubuntu-24.04-arm
+            arch: aarch64
+            platform: musllinux_aarch64
+          - name: manylinux-armv7l
+            os: ubuntu-24.04-arm
+            arch: armv7l
+            platform: manylinux_armv7l
+          - name: macos-x86_64
+            os: macos-15-intel
+            arch: x86_64
+            platform: macosx_x86_64
+            rust_target: x86_64-apple-darwin
+          - name: macos-arm64
+            os: macos-latest
+            arch: arm64
+            platform: macosx_arm64
+            rust_target: aarch64-apple-darwin
+    runs-on: ${{ matrix.target.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - name: Cache downloaded wheel-build tools
+        if: runner.os != 'Linux'
+        uses: actions/cache@v5
+        with:
+          path: ${{ runner.temp }}/cibw-cache
+          key: cibw-4.3.3-${{ matrix.target.name }}-${{ matrix.python.name }}-${{ hashFiles('pyproject.toml') }}
+          restore-keys: |
+            cibw-4.3.3-${{ matrix.target.name }}-${{ matrix.python.name }}-
+            cibw-4.3.3-${{ matrix.target.name }}-
+      - name: Install wheel builder
+        run: python -m pip install cibuildwheel==4.3.3
+      - name: Prepare Rust targets
+        if: runner.os != 'Linux'
+        shell: bash
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+          rustup target add "${{ matrix.target.rust_target }}"
+      - name: Locate MSVC runtime DLLs for wheel repair
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $vsPath = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if ($LASTEXITCODE -ne 0 -or !$vsPath) { throw "Visual Studio C++ tools were not found" }
+          $redistRoot = Join-Path $vsPath 'VC\Redist\MSVC'
+          $redistDirs = foreach ($arch in @('${{ matrix.target.msvc_arch }}')) {
+            $runtime = Get-ChildItem -Path "$redistRoot\*\$arch\Microsoft.VC*.CRT\msvcp140.dll" |
+              Sort-Object { [version] $_.Directory.Parent.Parent.Name } -Descending |
+              Select-Object -First 1
+            if (!$runtime) { throw "MSVC runtime DLLs for $arch were not found in $redistRoot" }
+            Write-Host "${arch} runtime: $($runtime.FullName)"
+            $runtime.DirectoryName
+          }
+          "LAPRUST_MSVC_REDIST_DIRS=$($redistDirs -join ';')" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Build and test wheels
+        run: python -m cibuildwheel --output-dir wheelhouse
+        env:
+          CIBW_CACHE_PATH: ${{ runner.temp }}/cibw-cache
+          CIBW_ARCHS: ${{ matrix.target.arch }}
+          CIBW_BUILD: ${{ matrix.python.build }}-${{ matrix.target.platform }}
+          CIBW_BUILD_VERBOSITY: 1
+          CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: >-
+            delvewheel repair --add-path "%LAPRUST_MSVC_REDIST_DIRS%" -w "{dest_dir}" -v "{wheel}"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: wheels-${{ matrix.target.name }}-${{ strategy.job-index }}
+          path: wheelhouse/*.whl
+          if-no-files-found: error
+          compression-level: 0
+  sdist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - run: python -m pip install build
+      - run: python -m build --sdist
+      - uses: actions/upload-artifact@v7
+        with:
+          name: sdist
+          path: dist/*.tar.gz
+          if-no-files-found: error
+          compression-level: 0

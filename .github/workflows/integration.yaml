@@ -1,0 +1,94 @@
+name: Installation and cross-package integration
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      counterpart_ref:
+        description: lapcpp branch, tag, or commit
+        type: string
+        default: main
+  workflow_call:
+    inputs:
+      counterpart_ref:
+        description: lapcpp branch, tag, or commit
+        type: string
+        default: main
+permissions:
+  contents: read
+concurrency:
+  group: integration-${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+jobs:
+  cross_package:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python: ['3.9', '3.15']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Check out laprust at the workflow revision
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ github.sha }}
+          path: laprust
+      - name: Check out lapcpp from GitHub
+        uses: actions/checkout@v7
+        with:
+          repository: rathaROG/lapcpp
+          ref: ${{ inputs.counterpart_ref || 'main' }}
+          path: lapcpp
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+          allow-prereleases: true
+      - name: Set up Rust
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+      - name: Install both GitHub source checkouts
+        run: >-
+          python -m pip install
+          "${{ github.workspace }}/lapcpp"
+          "${{ github.workspace }}/laprust"
+          numpy scipy pytest pytest-timeout
+      - name: Record compared revisions
+        run: |
+          git -C "${{ github.workspace }}/lapcpp" rev-parse HEAD
+          git -C "${{ github.workspace }}/laprust" rev-parse HEAD
+      - name: Require and test both packages together
+        working-directory: ${{ github.workspace }}/laprust/tests
+        run: python -m pytest -q test_cross_package.py --run-cross-package --junitxml=../build/cross-package.xml
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: cross-package-${{ matrix.os }}-${{ matrix.python }}
+          path: ${{ github.workspace }}/laprust/build/cross-package.xml
+  editable:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python: ['3.9', '3.15']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+          allow-prereleases: true
+      - name: Set up Rust
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+      - name: Install integration-test runner
+        run: python -m pip install pytest pytest-timeout
+      - name: Test editable modes and wheel transitions in isolated environments
+        working-directory: .github/tests
+        run: python -m pytest -q test_editable_install.py --run-editable --junitxml=../../build/editable.xml
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: editable-${{ matrix.os }}-${{ matrix.python }}
+          path: build/editable.xml

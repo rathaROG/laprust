@@ -1,0 +1,12 @@
+laprust 1.0.0 is derived from the lapjvr solver family of LAPX 0.11.1
+(rathaROG/lapx, v0.11.1).
+
+The square Jonker-Volgenant implementation derives from source{d}/lapjv
+and carries the copyright of Vadim Markovtsev (2016). Native rectangular
+assignment, implicit rejection handling, adapters and batch execution derive
+from Ratha SIV's LAPX work (2026). See src/_lapjv/LICENSE for the full MIT text.
+The top-level LICENSE covers this package. Neither package requires LAPX.
+
+Rust dependencies and their notices are listed in src/_lapjv/THIRD_PARTY_NOTICES.
+
+Historical regression matrices and fixture generators are adapted from LAPX/gatagat-lap tests under BSD-2-Clause. See tests/LICENSE. The epsilon dataset was contributed by Michael Lewis.

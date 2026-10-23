@@ -1,0 +1,12 @@
+include LICENSE NOTICE README.md CHANGELOG.md CONTRIBUTING.md pyproject.toml setup.py
+recursive-include laprust *.py *.pyi py.typed
+recursive-include src *.pyx *.h *.cpp *.rs Cargo.toml Cargo.lock LICENSE THIRD_PARTY_NOTICES
+recursive-include tests *.py *.cpp *.h CMakeLists.txt *.csv.gz *.md LICENSE
+recursive-include benchmarks *.py *.md
+recursive-include examples *.py
+recursive-include docs *.md
+recursive-include .github/workflows *.yaml
+recursive-include .github/constraints *.txt
+recursive-include .github/tests *.py *.ini *.txt *.md
+prune src/_lapjv/target
+global-exclude __pycache__ *.pyc *.pyd *.so
