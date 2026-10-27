@@ -8,12 +8,13 @@ permissions:
 concurrency:
   group: tests-${{ github.ref }}
   cancel-in-progress: true
+# Pin Ubuntu 24.04 LTS: setup-python has no Python 3.9 build for Ubuntu 26.04.
 jobs:
   test:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, windows-11-arm, macos-15-intel, macos-latest]
+        os: [ubuntu-24.04, ubuntu-24.04-arm, windows-latest, windows-11-arm, macos-15-intel, macos-latest]
         python: ['3.9', '3.10', '3.11', '3.12', '3.13', '3.14', '3.15']
         exclude:
           - os: windows-11-arm
@@ -60,7 +61,7 @@ jobs:
             build/build-results.xml
   numpy_compat:
     name: NumPy ${{ matrix.numpy }} / Python ${{ matrix.python }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:

@@ -18,12 +18,13 @@ permissions:
 concurrency:
   group: integration-${{ github.ref }}-${{ github.workflow }}
   cancel-in-progress: true
+# Pin Ubuntu 24.04 LTS: setup-python has no Python 3.9 build for Ubuntu 26.04.
 jobs:
   cross_package:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-24.04, windows-latest, macos-latest]
         python: ['3.9', '3.15']
     runs-on: ${{ matrix.os }}
     steps:
@@ -69,7 +70,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-24.04, windows-latest, macos-latest]
         python: ['3.9', '3.15']
     runs-on: ${{ matrix.os }}
     steps:
