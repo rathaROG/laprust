@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.0 - 2026-10-26
+
+- Bound row-reduction initialization on large rectangular inputs to improve
+  congested assignments, using separate budgets for required and finite-limit
+  solving while preserving the public API and assignment objective.
+- Keep the rectangular core synchronized with LAPX's Rust and hybrid solvers.
+- Performance gains depend on the workload; some small-input slowdowns remain.
+
 ## 1.0.0 - 2026-10-23
 
 First stable release.
