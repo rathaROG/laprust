@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.1.1 - 2026-10-28
 
 - Keep float32 cost storage while using float64 potentials, distances, and
   reduced-cost arithmetic in rectangular and finite-limit solving, matching the

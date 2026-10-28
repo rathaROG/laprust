@@ -79,7 +79,7 @@ solver families. Preserve the LAPX and original upstream attribution in `NOTICE`
   manual runs of the five-candidate comparison, with JSON artifacts.
 
 Set up the PyPI Trusted Publisher for this repository, `publish.yaml`, environment
-`pypi`, before publishing. Tag `v1.1.0` only when releasing version 1.1.0. The
+`pypi`, before publishing. Tag `v1.1.1` only when releasing version 1.1.1. The
 manual prepublish workflow creates artifacts without uploading them to PyPI.
 Benchmark workflows accept counterpart and LAPX repository refs. LAPX defaults
 to the `v0.11.1` release; record all
