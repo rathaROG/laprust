@@ -1,6 +1,13 @@
 # Copyright (c) 2026 Ratha SIV | MIT License
 
-"""Static signatures and documentation for the laprust entry points."""
+"""Static signatures and documentation for the laprust entry points.
+
+Precision selects cost storage/conversion. All paths use float64 working
+potentials, distances, and reduced-cost arithmetic. Finite half-limits remain
+rounded in the selected cost dtype; returned totals use original input costs.
+Widening does not restore converted-away distinctions or guarantee exactness
+for arbitrary cost ranges.
+"""
 
 from typing import Any, List, Optional, Tuple, Union, overload
 from typing import Literal, Protocol

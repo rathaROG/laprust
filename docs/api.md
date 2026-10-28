@@ -44,12 +44,16 @@ are converted to float64. Explicit conversion to float32 rejects finite values
 or limits outside the float32 range. Integer inputs are converted to float64,
 so integers outside its exact range can lose precision.
 
-The required square path keeps potentials and distances in float64 even with
-float32 costs. Rectangular and finite-limit paths use the selected working
-precision; rejection penalties are represented in that precision. The returned
-total always sums the original selected costs in float64 before any requested
-float32 conversion. Changing precision can change the optimal assignment of
-the rounded working problem.
+All paths keep potentials, distances, and reduced-cost arithmetic in float64,
+including when costs are stored in float32. Each half-limit and their combined
+row-rejection penalty are still rounded in the selected cost dtype before
+promotion to float64. The returned total always sums the original selected
+costs in float64 before any requested float32 conversion. Changing precision
+can change the optimal assignment of the rounded cost problem.
+
+Float64 working arithmetic reduces cancellation when finite costs are large
+relative to assignment differences. It does not guarantee exactness at arbitrary
+dynamic ranges and cannot recover values rounded during cost conversion.
 
 Suitable aligned, contiguous, native-endian arrays are borrowed. Layout,
 endianness or dtype conversion can require an input copy. Native rectangles

@@ -263,9 +263,11 @@ def lapjv(cost, extend_cost=False, double cost_limit=np.inf,
     LAPRUST uses Rust for required square completion. Rectangular and
     finite-limit problems use native Rust paths without square padding.
 
-    Required square problems use float64 potentials and distances even with
-    float32 costs. Rectangular and finite-limit paths use the selected working
-    precision.
+    All paths use float64 potentials, distances, and reduced-cost arithmetic
+    while retaining the selected float32 or float64 cost storage. Rejection
+    half-penalties and their sum are rounded in the selected cost dtype.
+    Extreme dynamic ranges can still obscure small assignment differences;
+    widening cannot restore costs rounded during input conversion.
     A finite limit optimizes rejection jointly with matching; it is not
     equivalent to filtering a required solution after solving. Equal-cost
     optima can produce different assignments across solvers or precisions.
@@ -383,9 +385,11 @@ def lapjv_batch(costs, extend_cost=False, double cost_limit=np.inf,
     LAPRUST uses Rust for required square completion. Rectangular and
     finite-limit problems use native Rust paths without square padding.
 
-    Required square problems use float64 potentials and distances even with
-    float32 costs. Rectangular and finite-limit paths use the selected working
-    precision.
+    All paths use float64 potentials, distances, and reduced-cost arithmetic
+    while retaining the selected float32 or float64 cost storage. Rejection
+    half-penalties and their sum are rounded in the selected cost dtype.
+    Extreme dynamic ranges can still obscure small assignment differences;
+    widening cannot restore costs rounded during input conversion.
     Finite limits optimize rejection jointly with matching; they are not
     equivalent to filtering required solutions after solving. Equal-cost
     optima can produce different assignments across solvers or precisions.

@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+- Keep float32 cost storage while using float64 potentials, distances, and
+  reduced-cost arithmetic in rectangular and finite-limit solving, matching the
+  existing required-square working precision. This fixes lost small assignment
+  differences beside large finite costs without widening the full cost matrix.
+- Preserve cost conversion, represented half-limit rounding, and totals from
+  original selected costs. Float64 working arithmetic is not an arbitrary-range
+  exactness guarantee.
+- Add exact float32 initialization and augmenting-search regressions, including
+  primal/dual certificates and required/implicit-rejection paths.
+
 ## 1.1.0 - 2026-10-26
 
 - Bound row-reduction initialization on large rectangular inputs to improve

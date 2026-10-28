@@ -127,3 +127,19 @@ cargo test --locked --all-features --manifest-path src/_lapjv/Cargo.toml
 The C ABI tests also verify panic containment in serial/parallel calls, the
 lowest infeasible batch index, and dimension rejection before pointer access.
 See `native.yaml` for the Linux nightly sanitizer commands.
+
+## Float32 working-arithmetic regressions
+
+`test_float32_working_precision.py` checks tiny exact optima beside large costs
+in rectangular required and finite-limit solves. It covers both orientations,
+precision selections (including genuine float64 controls), indices/pairs,
+totals on/off, readonly/strided batches, worker counts 1/2, and a fixture that
+requires augmenting search. Independent Fraction enumeration checks represented
+costs and rounded half-penalties; returned totals are checked separately on the
+original input. Quantization-sensitive fixtures ensure widening does not change
+the public cost-conversion contract. These are correctness checks, not timings.
+
+The helpers in `test_lapjv.py` also model selected cost precision and rounded
+half-limits explicitly. Reduced-cost overflow beyond float32 is now solvable
+with float64 working state; genuine float64 overflow retains error/recovery
+coverage. Widening is not an arbitrary-range exactness guarantee.
