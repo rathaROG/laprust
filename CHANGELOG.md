@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.2.0 - 2026-10-28
+
+- Use a common four-scan row-reduction allowance and prefer equally cheap free
+  columns throughout rectangular and finite-limit initialization.
+- Stop lowering column potentials after a stalled displacement chain in required
+  rectangular matching. Keep the bounded reduction allowance for finite-limit
+  matching, where interrupting long chains can increase augmenting-search work.
+- Preserve the assignment objective, float32 fixes, and required-square solver.
+  Performance depends on the workload; see the
+  [initialization policy and tradeoffs](benchmarks/initialization-policy.md).
+
 ## 1.1.1 - 2026-10-28
 
 - Keep float32 cost storage while using float64 potentials, distances, and
