@@ -1,5 +1,8 @@
 # Five-candidate benchmarks
 
+See the [initialization policy](initialization-policy.md) for the 1.2.0
+reduction rules and performance tradeoffs.
+
 Compare single assignments, native batches and tracking against SciPy. Each
 candidate has a dedicated solver call; there are no fallback solvers.
 
