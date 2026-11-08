@@ -1,4 +1,4 @@
-"""Time assignment pairs using the settings from the pinned LAPX benchmark."""
+"""Time assignment pairs with the reference LAPX benchmark settings."""
 import lap
 import lapcpp
 import laprust

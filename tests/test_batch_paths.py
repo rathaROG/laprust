@@ -1,9 +1,9 @@
 # Copyright (c) 2026 Ratha SIV | MIT License
-"""Batch scheduling and result-construction paths.
+"""Check batch scheduling and result construction.
 
-Rayon splits large batches of small problems across workers, and batches known
-to be fully matched build their per-problem results by row iteration. Every such
-path must return exactly what solving each problem separately returns.
+Rayon splits large batches of small problems across workers.
+For batches known to be fully matched, results for each problem use row iteration.
+Every such path must return exactly what solving each problem separately returns.
 """
 
 import numpy as np

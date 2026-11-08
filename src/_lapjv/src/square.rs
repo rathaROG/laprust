@@ -91,7 +91,7 @@ fn sampled_block_conflicts<T: Cost>(costs: &[T], n: usize, minimum: f64, range: 
 }
 
 impl Workspace {
-    /// Solve a square, flat row-major matrix; assignments remain in this workspace.
+    /// Solve a square, flat row-major matrix. Assignments remain in this workspace.
     /// NaN and negative infinity are excluded by the caller's cost contract.
     #[inline(never)]
     pub fn solve<T: Cost>(&mut self, costs: &[T], n: usize) -> Result<&[usize], Error> {

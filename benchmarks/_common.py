@@ -1,8 +1,7 @@
-"""Timing, input generation, validation and reporting shared by the benchmarks.
+"""Share timing, input generation, validation and reporting across benchmarks.
 
 Solver calls belong in the three entry points. Inputs, workloads and checks
-follow the LAPX v0.11.1 release; its timing is
-available with --reference-timing.
+follow the LAPX v0.13.0 release. Use --reference-timing for its timing settings.
 """
 import argparse
 import importlib.metadata
@@ -15,8 +14,10 @@ import time
 from unicodedata import combining, east_asian_width
 
 import numpy as np
+from packaging.version import InvalidVersion, Version
 
-REFERENCE_RELEASE = "v0.11.1"
+MIN_LAPX_VERSION = "0.13.0"
+REFERENCE_RELEASE = "v0.13.0"
 CANDIDATES = ("scipy", "lapcpp", "laprust", "lapjvxa", "lapjvsa")
 POSITION_VERDICTS = {0: "🥇", 1: "🥈", 2: "🥉", 3: "🚩", 4: "🏳️",
                      5: "🥴", 6: "🗿", 7: "🙅‍♂️"}
@@ -31,11 +32,11 @@ def common_parser(description, repeats):
                         help="fixed calls per timed sample; 0 calibrates calls to --min-time "
                              "(or uses the reference defaults with --reference-timing)")
     parser.add_argument("--min-time", type=float, default=0.01,
-                        help="calibrated timing: minimum seconds per sample; default 0.01")
+                        help="calibrated timing: target seconds per sample; default 0.01")
     parser.add_argument("--fast-rounds", type=int, default=7,
                         help="calibrated timing: rounds for cases whose slowest call is under 1 ms; default 7")
     parser.add_argument("--reference-timing", action="store_true",
-                        help="LAPX v0.11.1 timing: 1 call per sample above 64 columns or in batches, "
+                        help=f"LAPX {REFERENCE_RELEASE} timing: 1 call per sample when either dimension exceeds 64 or in batches, "
                              "25 otherwise, every solver warmed once before the timed calls")
     parser.add_argument("--dtype", choices=("float32", "float64", "both"), default="float64",
                         help="input dtype; float64 matches the reference benchmark")
@@ -102,12 +103,12 @@ def check_batch(costs, result, baseline, *, return_cost=False):
 
 
 def measure_case(solvers, shape, dtype, args, check, *, batch=False, threshold=None):
-    """Time already-bound dedicated functions; check outputs after all timings.
+    """Time the bound solver functions. Check outputs after all timings.
 
     Calibrated timing (default) warms each solver immediately before its own
-    sample and repeats calls until a sample lasts at least --min-time, so
-    microsecond cases are not single cold calls. --reference-timing keeps the
-    pinned LAPX settings for comparison with its published numbers.
+    sample. Calibration selects a call count to target --min-time. Thus,
+    microsecond cases do not use single cold calls. Use --reference-timing to
+    compare results with the published numbers from the reference LAPX benchmark.
     """
     names = list(solvers)
     assert tuple(names) == CANDIDATES
@@ -170,7 +171,24 @@ def measure_case(solvers, shape, dtype, args, check, *, batch=False, threshold=N
 
 
 def environment(kind, args, modules, solver_calls):
-    provenance = importlib.metadata.distribution("lapx").read_text("direct_url.json")
+    lapx_distribution = importlib.metadata.distribution("lapx")
+    loaded_version = modules["lapx"].__version__
+    try:
+        installed = Version(lapx_distribution.version)
+        loaded = Version(loaded_version)
+    except InvalidVersion as exc:
+        raise RuntimeError(
+            f"Cannot verify LAPX versions: installed distribution is {lapx_distribution.version!r}, "
+            f"loaded lap module is {loaded_version!r}."
+        ) from exc
+    if installed < Version(MIN_LAPX_VERSION) or loaded != installed:
+        raise RuntimeError(
+            f"These benchmarks require lapx>={MIN_LAPX_VERSION} with matching installed and imported versions; "
+            f"installed distribution is {lapx_distribution.version}, loaded lap module is {loaded_version}. "
+            f'Reinstall with: python -m pip install --force-reinstall --no-deps "lapx>={MIN_LAPX_VERSION}". '
+            "Run outside any other LAPX source checkout."
+        )
+    provenance = lapx_distribution.read_text("direct_url.json")
     return dict(schema_version=3, reference_release=REFERENCE_RELEASE, kind=kind,
                 input_model="uniform [0, 1)", numpy=np.__version__, python=sys.version,
                 platform=platform.platform(), processor=platform.processor(), cpu_count=os.cpu_count(),
@@ -195,7 +213,7 @@ def print_header(metadata):
         print(f"Timing: LAPX reference | rounds: {settings['repeats']} | "
               f"calls/round: {settings['calls'] or 'auto'} | median time in ms")
     else:
-        calls = settings['calls'] or f"calibrated to >= {settings.get('min_time', .01) * 1000:g} ms per sample"
+        calls = settings['calls'] or f"calibrated to target {settings.get('min_time', .01) * 1000:g} ms per sample"
         print(f"Timing: warm-up before each sample | rounds: {settings['repeats']} "
               f"({settings.get('fast_rounds', 7)} for sub-millisecond cases) | calls: {calls} | median time in ms")
     print("JVS: default float32 | lapcpp/laprust: native precision | JVX/SciPy: float64")
@@ -211,7 +229,7 @@ def print_header(metadata):
 
 
 def display_width(text):
-    """Terminal columns for our ASCII labels, emoji and joined rank symbols."""
+    """Return terminal column counts for ASCII labels, emoji and joined rank symbols."""
     width = cluster_width = 0
     joined = False
     for char in text:
@@ -285,7 +303,7 @@ def _comparison(record, baseline_ms, position):
 
 
 def print_records(records, *, batch=False):
-    """A ranked LAPX-style table for one single or batch case."""
+    """Print a ranked LAPX-style table for one single or batch case."""
     first = records[0]
     b, n, m = first["shape"]
     title = f"Batch {b} x {n} x {m}" if batch else f"Matrix {n} x {m}"
@@ -319,7 +337,7 @@ def _case_groups(records):
 
 
 def print_tracking_records(records):
-    """One compact matrix per dtype/threshold, with all solvers side by side."""
+    """Print one compact table per dtype/threshold, with all solvers side by side."""
     groups = {}
     for record in records:
         groups.setdefault((record["dtype"], record["threshold"]), []).append(record)

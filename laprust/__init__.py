@@ -1,4 +1,4 @@
-"""Native Rust linear assignment solvers with implicit rejection and batch solving."""
+"""Solve linear assignment problems with native Rust, implicit rejection, and batch solving."""
 from ._lapjv import lapjv, lapjv_batch
 
 __version__ = "1.2.0"

@@ -1,5 +1,5 @@
 # Copyright (c) 2026 Ratha SIV | MIT License
-"""Numerical and API contract tests for laprust."""
+"""Check the numerical and API contracts for laprust."""
 
 import itertools
 from concurrent.futures import ThreadPoolExecutor

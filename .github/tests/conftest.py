@@ -1,4 +1,4 @@
-"""Explicit opt-in for checks that build and install into temporary environments."""
+"""Require an explicit opt-in for checks that build and install into temporary environments."""
 import pytest
 
 

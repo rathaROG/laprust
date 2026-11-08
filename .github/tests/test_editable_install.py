@@ -1,4 +1,4 @@
-"""Real PEP 660 installs and wheel transitions, using a disposable checkout/venv."""
+"""Check real PEP 660 installs and wheel transitions in a temporary checkout and virtual environment."""
 import os
 from pathlib import Path
 import shutil

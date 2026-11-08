@@ -1,4 +1,4 @@
-"""Shared fixtures and explicit opt-ins for checks needing extra installations."""
+"""Provide shared fixtures and explicit opt-ins for checks that need extra installations."""
 import importlib
 import pytest
 

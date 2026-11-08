@@ -1,9 +1,9 @@
 # Build, packaging, and benchmark-tool checks
 
 Solver behavior, native error handling, cross-package solver comparisons, and
-public API typing checks live in [tests/](../../tests/README.md).
-This directory holds build configuration, installation, distribution, and
-benchmark-tool checks, with its own pytest configuration and dependencies.
+public API typing checks are in [tests/](../../tests/README.md).
+This directory contains build configuration, installation, distribution, and
+benchmark-tool checks. It has its own pytest configuration and dependencies.
 
 ## Routine checks
 
@@ -29,7 +29,9 @@ The portable solver suite runs separately with `python tests/check_scipy_free.py
 
 ## Distributions and runtime compatibility
 
-After building the source archive and wheel, and installing the wheel:
+1. Build the source archive and wheel.
+2. Install the wheel.
+3. Run these checks from the repository root:
 
 ```sh
 python .github/tests/check_dist.py
@@ -37,37 +39,42 @@ python .github/tests/check_wheel.py
 ```
 
 `check_dist.py` verifies metadata, namespaces, licenses, and source-archive
-contents. Both the solver suite and these CI checks are included in source
-archives so full CI runs can validate wheels built from them.
+contents. Source archives include the solver suite and these CI checks.
+Full CI runs can therefore validate wheels built from source archives.
 `check_wheel.py` checks the installed package and rejects imports from the source
-checkout. Invoke it by path as shown, with NumPy and the wheel installed.
+checkout. With NumPy and the wheel installed, run the command with the path shown above.
 `install_numpy_compat.py` installs the NumPy/SciPy versions selected by CI and
 checks the built wheel against that runtime.
 
 ## Isolated editable installs
 
-These checks require access to the package index and a native C++ compiler;
-`laprust` also requires Rust and Cargo. Run from the repository root:
+These checks require access to the package index, a native C++17 compiler, Rust, and Cargo.
+Run from the repository root:
 
 ```sh
 python -m pytest -q .github/tests/test_editable_install.py --run-editable
 ```
 
-They copy the current source into a temporary checkout and create a fresh
-virtual environment without system site packages. They check default, strict,
-and compatibility modes, visible source edits, native imports, standalone
-dependencies, type stubs, wheel replacement, and editable reinstallation.
-They do not modify the working checkout or the invoking environment.
+These checks copy the current source into a temporary checkout.
+They create a fresh virtual environment without system site packages.
+They check default, strict, and compatibility modes, visible source edits,
+native imports, standalone dependencies, type stubs, wheel replacement, and
+editable reinstallation. They do not modify the working checkout or the
+environment from which you run them.
 Without `--run-editable`, pytest skips this group.
 
 The [tests workflow](../workflows/tests.yaml) runs solver and build/tool checks
 in separate steps, including the older-NumPy jobs. The
 [integration workflow](../workflows/integration.yaml) runs the editable group
-separately from cross-package solver checks. Publish and prepublish run only
+separately from cross-package solver checks.
+
+Publish and prepublish run only
 the NumPy-only installed-wheel smoke check for each cibuildwheel target.
-Manual prepublish runs default to Python 3.9 and 3.15, matching LAPX; select
-`full` to build every supported Python version. Publishing always requests
+Manual prepublish runs default to Python 3.9 and 3.15, matching LAPX.
+To build every supported Python version, select `full`.
+Publishing always requests
 the full Python 3.9-3.15 wheel set. Release builds run in two Python groups,
 with separate jobs for each architecture and Linux wheel type.
+
 Integration and native/sanitizer workflows run on pull requests or manual
 dispatch, separately from publishing, matching LAPX's release workflow.

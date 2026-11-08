@@ -1,16 +1,17 @@
 # Solver test coverage
 
-Run tests from `tests/` so an installed wheel is not shadowed by the source
-package. Install `.[test]` first, or install a wheel plus NumPy, SciPy, pytest,
-and pytest-timeout.
+First, install `.[test]` or a wheel plus NumPy, SciPy, pytest, and pytest-timeout.
+Run tests from `tests/` so Python imports the installed wheel instead of the
+source package.
 
 ```sh
 cd tests
 python -m pytest -q -m "not cross_package"
 ```
 
-Cross-package solver checks are an explicit opt-in because they require both
-packages. Install both sibling repositories before running them from `tests/`:
+Cross-package solver checks require an explicit opt-in because they need both
+packages. Before running these checks, install both sibling repositories.
+Run these commands from `tests/`:
 
 ```sh
 python -m pip install ../ ../../lapcpp
@@ -23,30 +24,30 @@ An explicitly requested cross-package run fails if a package is missing.
 It never silently skips a missing solver.
 
 Build configuration, isolated editable installs, distribution checks, and
-benchmark-tool tests live in [.github/tests/](../.github/tests/README.md).
+benchmark-tool tests are in [.github/tests/](../.github/tests/README.md).
 CI runs those checks separately on pull requests or manual dispatch.
 
 ## Coverage relative to LAPX
 
 | LAPX coverage | Coverage here |
 | --- | --- |
-| `test_lapjvr.py` and its fixtures | All 37 test functions (600 parameterized cases) retained in `test_lapjv.py` / `lapjv_cases.py`, with the package/API names adapted. |
-| Historical `test_lapjv.py` fixtures | `test_regressions.py`: augmentation/TrackMate cases, sliced/noncontiguous inputs, rectangles and explicit padding, finite limits, isolated forbidden-edge matches, epsilon data, seeded known optima at sizes 100, 1000 and 4000. |
-| `test_arr_loop.py`, reported LAPX/upstream issues | Original dense ARR-loop, negative-cost, infinity and million-cost blocking cases, both orientations and precisions, single and batch. |
-| `test_large_cost_consistency.py` | Fixed billion-cost optima, integer and floating input, rectangular orientations, both result layouts, totals on/off, batches and threads, forbidden edges, signed large costs and finite limits. |
-| Input/native/wrapper stability and dense smoke tests | `test_lapjv.py` + `test_edge_cases.py`: independent exhaustive and SciPy objectives, required/rejected matching, signatures, invalid inputs/options, empty inputs, original-value totals, precision boundaries, readonly/strided/unaligned/endian/broadcast inputs, result-buffer independence/lifetime, overflow, deterministic failures and recovery. |
-| Batch/thread tests | Native worker-count normalization, changing automatic CPU counts, sequential/concurrent calls, multiple pools and sizes, ordering, input preservation and failure recovery in `test_lapjv.py`. `test_batch_paths.py`: large batches of small problems split across workers, a failure among them reporting the lowest index, and result construction at batch sizes 7–33 with required, fully matched and partly rejected limits, all against separate single solves. |
-| `test_lapjv_rh.py` | `test_cross_package.py`: both actual packages, repeated-row completion cases, original seeded C++/Rust equivalence cases, alternating and concurrent single/batch calls, errors isolated across packages, both import orders and interpreter shutdown. |
-| Public API, package independence, and typing | `test_package.py`, `typing/return_types.py`. |
+| `test_lapjvr.py` and its fixtures | `test_lapjv.py` / `lapjv_cases.py` retain all 37 test functions (600 parameterized cases). Package/API names are adapted. |
+| Historical `test_lapjv.py` fixtures | `test_regressions.py` covers augmentation/TrackMate cases, sliced/noncontiguous inputs, rectangles and explicit padding, finite limits, isolated forbidden-edge matches, and epsilon data. It also checks seeded known optima at sizes 100, 1000 and 4000. |
+| `test_arr_loop.py`, reported LAPX/upstream issues | Tests retain the original dense ARR-loop, negative-cost, infinity and million-cost blocking cases. They cover both orientations and precisions, for single and batch calls. |
+| `test_large_cost_consistency.py` | Tests check fixed billion-cost optima with integer and floating input, rectangular orientations, both result layouts, and totals on/off. They cover batches and threads, forbidden edges, signed large costs and finite limits. |
+| Input/native/wrapper stability and dense smoke tests | `test_lapjv.py` + `test_edge_cases.py` use independent exhaustive and SciPy objectives. They cover required/rejected matching, signatures, invalid inputs/options, empty inputs, original-value totals and precision boundaries. They check readonly/strided/unaligned/endian/broadcast inputs, result-buffer independence/lifetime, overflow, deterministic failures and recovery. |
+| Batch/thread tests | `test_lapjv.py` checks native worker-count normalization, changing automatic CPU counts, sequential/concurrent calls, multiple pools and sizes, ordering, input preservation and failure recovery. `test_batch_paths.py` checks large batches of small problems split across workers. A failure among those problems must report the lowest index. Result construction covers batch sizes 7–33 with required, fully matched and partly rejected limits. All results are checked against separate single solves. |
+| `test_lapjv_rh.py` | `test_cross_package.py` checks both actual packages, repeated-row completion cases, and the original seeded C++/Rust equivalence cases. It covers alternating and concurrent single/batch calls, errors isolated across packages, both import orders and interpreter shutdown. |
+| Public API, package independence, and typing | `test_package.py` and `typing/return_types.py` check these properties. |
 | Build and installation checks | See [.github/tests/](../.github/tests/README.md). |
-| Benchmark reference correctness | [.github/tests/test_benchmarks.py](../.github/tests/test_benchmarks.py): dedicated five-candidate API contracts, original JVS precision, tracking post-filtering, assignment/objective/total checks, timing boundaries, calibrated calls with per-solver warm-up, pinned input seeds, workload bounds, verdict thresholds and aggregate ranking. |
+| Benchmark reference correctness | [.github/tests/test_benchmarks.py](../.github/tests/test_benchmarks.py) checks dedicated five-candidate API contracts, original JVS precision, tracking post-filtering, assignment/objective/total checks, timing boundaries, and calibrated calls with per-solver warm-up. It also checks pinned input seeds, workload bounds, verdict thresholds and aggregate ranking. |
 
 These packages expose only `lapjv` and `lapjv_batch`. Sparse `lapmod` formats,
 legacy mapping outputs, other LAPX algorithms and their private helpers do
 not apply. Infeasible required assignments raise `ValueError` here, rather
 than returning the infinite totals of legacy LAPX algorithms. Cost matrices
-containing NaN or negative infinity are outside the documented contract;
-invalid `cost_limit` values are tested and rejected.
+containing NaN or negative infinity are outside the documented contract.
+Tests verify that the solver rejects invalid `cost_limit` values.
 
 Numerical checks use exhaustive enumeration, SciPy, and historical known
 optima as independent references. Single/batch or cross-package agreement
@@ -57,30 +58,33 @@ claim of measured 100% line or branch coverage.
 
 ## CI
 
-- `tests.yaml` builds a wheel from the source archive and runs solver and
-  build/tool checks in separate steps on Python 3.9-3.15 across Windows, Linux and macOS, x86-64 and ARM64
-  where the Python/runner combination is supported. Windows ARM64 starts at
-  Python 3.11. It also checks typing, distribution contents, and runs the
-  portable core suite with SciPy imports explicitly forbidden.
+- `tests.yaml` builds a wheel from the source archive.
+  It runs solver and build/tool checks in separate steps on Python 3.9-3.15.
+  The workflow covers Windows, Linux and macOS, x86-64 and ARM64, where the
+  Python/runner combination is supported. Windows ARM64 starts at Python 3.11.
+  The workflow also checks typing and distribution contents.
+  It runs the portable core suite with SciPy imports explicitly forbidden.
 - NumPy compatibility jobs test NumPy-2-built wheels against NumPy 1.21.6 on
   Python 3.9 and NumPy 1.26.4 on Python 3.11.
 - `integration.yaml` runs cross-package and isolated editable checks on
   Windows, Linux and macOS, using Python 3.9 and 3.15. The counterpart source
-  ref is configurable for manual/reusable runs and both revisions are logged.
+  ref is configurable for manual/reusable runs. The workflow logs both revisions.
 - Wheel builds cover Windows AMD64/ARM64, macOS x86_64/arm64, Linux manylinux
   x86_64/aarch64/armv7l, and Linux musllinux x86_64/aarch64, where supported by
   cibuildwheel. Each wheel runs the NumPy-only installed-wheel smoke check in
   `.github/tests/check_wheel.py`, matching LAPX's lightweight wheel validation.
   The full solver, portable, and build/tool suites run separately in `tests.yaml`.
+
   Manual prepublish defaults to Python 3.9 and 3.15, matching LAPX. Select
-  `full` for a complete rehearsal; publishing always builds Python 3.9-3.15.
+  `full` for a complete rehearsal. Publishing always builds Python 3.9-3.15.
   Architectures and Linux wheel types run in separate jobs. Full builds split
   Python 3.9-3.11 and 3.12-3.15 into parallel groups, with unique artifacts.
   Windows and macOS cache downloaded cibuildwheel tools between runs.
+
   ARMv7 manylinux builds on Python 3.12-3.15 constrain NumPy to `>=2,<2.5`
   during both builds and tests for compatibility with the GCC 9 image.
   `publish.yaml` requires the version check and all wheel builds/smoke checks
-  to succeed, then publishes the wheels and source archive. Integration,
+  to succeed. It then publishes the wheels and source archive. Integration,
   native checks and sanitizers run in their separate PR/manual workflows.
   musllinux armv7l remains excluded for laprust.
 
@@ -92,24 +96,27 @@ rectangular assignments against exhaustive enumeration and an independent
 bitmask reference. It covers precisions, return layouts, forbidden edges,
 concurrent batches, recovery, empty results with/without totals, and batch byte
 size guards. It blocks SciPy imports even when SciPy is installed. On 32-bit
-hosts only the two tests requiring dimensions above NumPy's own int32 limit
-are skipped; byte-size overflow checks still run.
+hosts, the suite skips only the two tests requiring dimensions above NumPy's own
+int32 limit. Byte-size overflow checks still run.
 
 `python tests/check_native_errors.py` compiles the actual Cython adapter against
 a test-only C ABI in a temporary directory. It checks native infeasibility,
-allocation, internal, dimension and unknown status codes, Python exception types,
-batch error indices, both precisions/output layouts/totals modes, and recovery.
-It needs NumPy, Cython, setuptools and a C++ compiler. This stub never enters an
-installed wheel. The native core tests separately inject workspace allocation,
+allocation, internal, dimension and unknown status codes.
+It also checks Python exception types, batch error indices, both
+precisions/output layouts/totals modes, and recovery.
+It needs NumPy, Cython, setuptools and a C++ compiler.
+This stub never enters an installed wheel.
+
+The native core tests separately inject workspace allocation,
 worker startup and internal failures and verify recovery. Fault injection is
-compiled out of ordinary wheel builds; it does not exhaust host resources.
+excluded from ordinary wheel builds. It does not exhaust host resources.
 
 `native.yaml` runs native tests and the adapter checks on Windows, Linux and
-macOS, x86-64 and ARM64. Linux sanitizer jobs run AddressSanitizer (plus
-UndefinedBehaviorSanitizer for C++) and ThreadSanitizer separately; any finding
-fails the job. The Rust jobs instrument the core, dependencies and standard
-library using nightly Rust and `rust-src`. Sanitizers exercise the native test
-executables, not the Python interpreter. The sanitizer configuration follows
+macOS, x86-64 and ARM64. Linux sanitizer jobs run AddressSanitizer and
+ThreadSanitizer separately. Any finding fails the job. The Rust jobs instrument
+the core, dependencies and standard library with nightly Rust and `rust-src`.
+Sanitizers exercise native test executables, not the Python interpreter.
+The sanitizer configuration follows
 [Clang's documentation](https://clang.llvm.org/docs/AddressSanitizer.html) and
 [the Rust sanitizer guide](https://doc.rust-lang.org/beta/unstable-book/compiler-flags/sanitizer.html).
 
@@ -135,11 +142,13 @@ in rectangular required and finite-limit solves. It covers both orientations,
 precision selections (including genuine float64 controls), indices/pairs,
 totals on/off, readonly/strided batches, worker counts 1/2, and a fixture that
 requires augmenting search. Independent Fraction enumeration checks represented
-costs and rounded half-penalties; returned totals are checked separately on the
-original input. Quantization-sensitive fixtures ensure widening does not change
+costs and rounded half-penalties. Tests check returned totals separately on the
+original input.
+
+Quantization-sensitive fixtures ensure widening does not change
 the public cost-conversion contract. These are correctness checks, not timings.
 
 The helpers in `test_lapjv.py` also model selected cost precision and rounded
 half-limits explicitly. Reduced-cost overflow beyond float32 is now solvable
-with float64 working state; genuine float64 overflow retains error/recovery
-coverage. Widening is not an arbitrary-range exactness guarantee.
+with float64 working state. Tests retain error/recovery coverage for genuine
+float64 overflow. Widening is not an arbitrary-range exactness guarantee.

@@ -1,4 +1,4 @@
-"""LAPX historical regressions, adapted to aligned indices and native rejection.
+"""Check historical LAPX regressions with aligned indices and native rejection.
 
 Historical matrices/builders are preserved in regression_cases.py under the
 original BSD license (tests/LICENSE). Tied optima are checked by objective,

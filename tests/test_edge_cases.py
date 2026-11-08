@@ -1,4 +1,4 @@
-"""Public API boundaries, ownership, and independent small-problem checks."""
+"""Check public API boundaries and ownership. Run independent checks on small problems."""
 import gc
 import inspect
 import sys

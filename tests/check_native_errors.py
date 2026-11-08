@@ -1,8 +1,9 @@
 """Build the real Cython adapter against a controlled failing C ABI.
 
-Run separately from installed-wheel tests: this requires Cython and a compiler.
-The stub is confined to a temporary extension and never enters a wheel. Native
-core tests separately inject real allocation/startup failures and test recovery.
+This check requires Cython and a compiler.
+Run it separately from installed-wheel tests.
+The stub stays in a temporary extension and never enters a wheel.
+Native core tests separately inject real allocation/startup failures and test recovery.
 """
 from pathlib import Path
 import shutil

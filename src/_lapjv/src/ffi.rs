@@ -339,9 +339,10 @@ fn batch<T: Kernel>(
     Ok(())
 }
 
-/// C boundary for the Cython adapter. Every pointer must be aligned, non-null,
-/// and valid for its described length; inputs must remain immutable throughout
-/// this call, outputs must be disjoint and exclusively owned by this call.
+/// Provide the C boundary for the Cython adapter.
+/// Every pointer must be aligned, non-null, and valid for its described length.
+/// Inputs must remain immutable throughout this call.
+/// Outputs must be disjoint and exclusively owned by this call.
 /// Panics are contained here and never unwind through Python/C++ frames.
 #[no_mangle]
 pub unsafe extern "C" fn laprust_run(

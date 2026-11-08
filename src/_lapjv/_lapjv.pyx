@@ -20,9 +20,9 @@ cdef extern from "lapjv.h" nogil:
 cdef cnp.ndarray _checked_float32(cnp.ndarray original):
     """Cast aligned, contiguous float64 costs without full-size temporaries.
 
-    Check the original value before conversion: otherwise finite overflow
-    becomes positive infinity and silently turns a usable edge into a forbidden
-    one. Genuine infinities retain the existing input contract.
+    Check the original value before conversion. Otherwise, positive finite overflow
+    becomes positive infinity and turns a usable edge into a forbidden edge.
+    Genuine infinities retain the existing input contract.
     """
     cdef cnp.ndarray converted = np.empty_like(original, dtype=np.float32)
     cdef const double* source = <const double*>cnp.PyArray_DATA(original)
@@ -194,8 +194,8 @@ def lapjv(cost, extend_cost=False, double cost_limit=np.inf,
     """Solve the linear assignment problem with the Jonker-Volgenant algorithm.
 
     The function returns aligned (rows, cols) index arrays. Use output='pairs'
-    for assignment pairs with shape (K, 2). If return_cost is True, return the
-    total assignment cost first.
+    for assignment pairs with shape (K, 2). If return_cost is True, the function
+    returns the total assignment cost first.
 
     Parameters
     ----------
@@ -215,15 +215,16 @@ def lapjv(cost, extend_cost=False, double cost_limit=np.inf,
         optimization. The returned total excludes these penalties. Negative finite
         limits are allowed. With np.inf, each problem requires min(N, M) matches.
     return_cost : bool, default True
-        If True, return the total assignment cost first.
+        If True, the function returns the total assignment cost first.
         The solver sums this total in float64 from the selected original input
-        costs, before any float32 conversion. If False, return only indices or
-        pairs and skip the total-cost sum.
+        costs. This sum uses the values before any float32 conversion.
+        If False, the function returns only indices or pairs and skips the
+        total-cost sum.
     precision : {'native', 'float32', 'float64'}, keyword-only, default 'native'
         Select the working cost precision. 'native' preserves float32/float64
-        inputs and uses float64 for other real numeric inputs. Explicit
-        'float32' or 'float64' converts the working costs. Finite costs and
-        limits must fit the selected float32 range when float32 is used.
+        inputs and uses float64 for other real numeric inputs. The 'float32'
+        and 'float64' options convert the working costs. When float32 is used,
+        finite costs and limits must fit the selected float32 range.
     output : {'indices', 'pairs'}, keyword-only, default 'indices'
         'indices' returns aligned row and column index arrays. 'pairs' returns
         an array with shape (K, 2), where each row contains
@@ -232,27 +233,34 @@ def lapjv(cost, extend_cost=False, double cost_limit=np.inf,
     Returns
     -------
     total_cost : float, optional
-        Returned first only if return_cost is True. The total sums selected
-        original input costs and excludes unmatched penalties.
+        The function returns this total first only if return_cost is True.
+        The total sums selected original input costs and excludes unmatched
+        penalties.
     rows, cols : np.ndarray, shape (K,), dtype int64
-        Returned if output='indices'. Each rows[i] is matched to cols[i].
-        The row indices are sorted in increasing order, and both arrays refer to
-        the original cost matrix.
+        The function returns these arrays if output='indices'. Each rows[i]
+        is matched to cols[i]. The row indices are sorted in increasing order.
+        Both arrays refer to the original cost matrix.
     pairs : np.ndarray, shape (K, 2), dtype int64
-        Returned instead of rows and cols if output='pairs'. Each row contains
-        (row_index, column_index), with pairs sorted by row index.
-        K is at most min(N, M); finite limits can choose fewer matches. An empty
-        matrix dimension returns arrays with K=0 and total cost 0.0.
+        If output='pairs', the function returns this array instead of rows and
+        cols. Each row contains (row_index, column_index). The pairs are sorted
+        by row index. K is at most min(N, M). Finite limits can choose fewer
+        matches. An empty matrix dimension returns arrays with K=0 and total
+        cost 0.0.
 
     Raises
     ------
     TypeError
         cost has a non-real numeric dtype, such as complex, object, or string.
     ValueError
-        The input is not 2D, a nonempty rectangle is disallowed, an option or
-        limit is invalid, float32 conversion overflows, dimensions exceed
-        native limits, required matches are infeasible, or reduced costs
-        overflow.
+        The solver raises this error if any of these conditions applies:
+
+        - The input is not 2D.
+        - A nonempty rectangle is disallowed.
+        - An option or limit is invalid.
+        - A float32 conversion overflows.
+        - Dimensions exceed native limits.
+        - Required matches are infeasible.
+        - Reduced costs overflow.
     MemoryError
         An input copy, output array, or native workspace cannot be allocated.
     RuntimeError
@@ -260,19 +268,20 @@ def lapjv(cost, extend_cost=False, double cost_limit=np.inf,
 
     Notes
     -----
-    LAPRUST uses Rust for required square completion. Rectangular and
+    LAPRUST completes required square assignments in Rust. Rectangular and
     finite-limit problems use native Rust paths without square padding.
 
-    All paths use float64 potentials, distances, and reduced-cost arithmetic
-    while retaining the selected float32 or float64 cost storage. Rejection
+    All paths use float64 potentials, distances, and reduced-cost arithmetic.
+    Cost storage retains the selected float32 or float64 dtype. Rejection
     half-penalties and their sum are rounded in the selected cost dtype.
-    Extreme dynamic ranges can still obscure small assignment differences;
-    widening cannot restore costs rounded during input conversion.
-    A finite limit optimizes rejection jointly with matching; it is not
-    equivalent to filtering a required solution after solving. Equal-cost
+    Extreme dynamic ranges can still obscure small assignment differences.
+    Float64 working arithmetic cannot restore costs rounded during input conversion.
+
+    A finite limit optimizes rejection jointly with matching. This objective is
+    not equivalent to filtering a required solution after solving. Equal-cost
     optima can produce different assignments across solvers or precisions.
 
-    Suitable contiguous arrays are borrowed, and the native solve releases
+    The solver borrows suitable contiguous arrays. The native solve releases
     the GIL. Other inputs may be copied for layout or precision conversion.
     Do not mutate or resize the input or any alias until the call returns.
 
@@ -299,8 +308,8 @@ def lapjv_batch(costs, extend_cost=False, double cost_limit=np.inf,
                  output="indices"):
     """Solve a batch of cost matrices with lapjv.
 
-    It runs lapjv on each (N, M) slice of the (B, N, M) batch.
-    It keeps the input order and supports execution with multiple threads.
+    The function runs lapjv on each (N, M) slice of the (B, N, M) batch.
+    It preserves the input order and supports execution with multiple threads.
     Use output='pairs' for a list of arrays of assignment pairs.
 
     Parameters
@@ -322,25 +331,29 @@ def lapjv_batch(costs, extend_cost=False, double cost_limit=np.inf,
         optimization. The returned totals exclude these penalties. Negative finite
         limits are allowed. With np.inf, each problem requires min(N, M) matches.
     return_cost : bool, default True
-        If True, return the array of total costs first.
+        If True, the function returns the array of total costs first.
         The solver sums each total in float64 from the selected original input
-        costs, before any float32 conversion. If False, return only index lists
-        or pair lists and skip the total-cost sums.
+        costs. Each sum uses the values before any float32 conversion.
+        If False, the function returns only index lists or pair lists and skips
+        the total-cost sums.
     n_threads : int or None, default 0
         This option sets the number of worker threads:
 
-        - 0 or None: Use os.cpu_count(). If the CPU count is unavailable, use 1.
-        - Negative values: Use one worker.
-        - Positive values: Use at most this many workers, limited to the batch size.
+        - 0 or None: The solver uses os.cpu_count(). If the CPU count is
+          unavailable, it uses 1.
+        - Negative values: The solver uses one worker.
+        - Positive values: The solver uses at most this many workers, limited
+          to the batch size.
 
-        One worker or at most one problem runs serially. Automatic mode may also
-        run small workloads serially. Otherwise, the solver reuses native worker
-        pools. Explicit positive values are not capped by the CPU count.
+        The solver runs serially with one worker or at most one problem.
+        Automatic mode may also run small workloads serially. Otherwise, the
+        solver reuses native worker pools. Explicit positive values are not
+        capped by the CPU count.
     precision : {'native', 'float32', 'float64'}, keyword-only, default 'native'
         Select the working cost precision. 'native' preserves float32/float64
-        inputs and uses float64 for other real numeric inputs. Explicit
-        'float32' or 'float64' converts the working costs. Finite costs and
-        limits must fit the selected float32 range when float32 is used.
+        inputs and uses float64 for other real numeric inputs. The 'float32'
+        and 'float64' options convert the working costs. When float32 is used,
+        finite costs and limits must fit the selected float32 range.
     output : {'indices', 'pairs'}, keyword-only, default 'indices'
         'indices' returns two lists of aligned row and column index arrays.
         'pairs' returns one list of arrays with shape (K_b, 2), where each row
@@ -349,17 +362,21 @@ def lapjv_batch(costs, extend_cost=False, double cost_limit=np.inf,
     Returns
     -------
     totals : np.ndarray, shape (B,), dtype float64, optional
-        Returned first only if return_cost is True. Each entry gives the total
-        cost for one original cost matrix, excluding unmatched penalties.
+        The function returns this array first only if return_cost is True.
+        Each entry gives the total cost for one original cost matrix,
+        excluding unmatched penalties.
     rows_list, cols_list : list of np.ndarray
-        Returned if output='indices'. Each list has length B. Entry b has
-        shape (K_b,) and dtype int64, with row indices sorted in increasing order.
+        The function returns these lists if output='indices'. Each list has
+        length B. Entry b has shape (K_b,) and dtype int64.
+        The row indices are sorted in increasing order.
         rows_list[b][i] is matched to cols_list[b][i] in the original cost matrix.
     pairs_list : list of np.ndarray
-        Returned instead of the two index lists if output='pairs'. The list has
-        length B. Entry b has shape (K_b, 2) and dtype int64. Each row contains
-        (row_index, column_index), with pairs sorted by row index.
-        K_b is at most min(N, M); finite limits can choose fewer matches.
+        If output='pairs', the function returns this list instead of the two
+        index lists. The list has length B. Entry b has shape (K_b, 2) and dtype
+        int64. Each row contains (row_index, column_index). The pairs are sorted
+        by row index.
+
+        K_b is at most min(N, M). Finite limits can choose fewer matches.
         An empty batch returns empty lists and, when requested, an empty totals
         array. An empty matrix dimension returns empty assignments and zero
         totals for each problem.
@@ -370,11 +387,18 @@ def lapjv_batch(costs, extend_cost=False, double cost_limit=np.inf,
         costs has a non-real numeric dtype, or n_threads cannot be interpreted
         as an integer.
     ValueError
-        The input is not 3D, nonempty rectangles are disallowed, options or
-        thread counts are invalid, float32 conversion overflows, dimensions
-        exceed native limits, required matches are infeasible, or reduced
-        costs overflow. Native solver failures identify the lowest failing
-        batch index; no partial batch result is returned.
+        The solver raises this error if any of these conditions applies:
+
+        - The input is not 3D.
+        - Nonempty rectangles are disallowed.
+        - Options or thread counts are invalid.
+        - A float32 conversion overflows.
+        - Dimensions exceed native limits.
+        - Required matches are infeasible.
+        - Reduced costs overflow.
+
+        Native solver failures identify the lowest failing batch index.
+        The solver returns no partial batch result.
     MemoryError
         Input copies, outputs, native workspaces, or workers cannot be allocated.
     RuntimeError
@@ -382,19 +406,20 @@ def lapjv_batch(costs, extend_cost=False, double cost_limit=np.inf,
 
     Notes
     -----
-    LAPRUST uses Rust for required square completion. Rectangular and
+    LAPRUST completes required square assignments in Rust. Rectangular and
     finite-limit problems use native Rust paths without square padding.
 
-    All paths use float64 potentials, distances, and reduced-cost arithmetic
-    while retaining the selected float32 or float64 cost storage. Rejection
+    All paths use float64 potentials, distances, and reduced-cost arithmetic.
+    Cost storage retains the selected float32 or float64 dtype. Rejection
     half-penalties and their sum are rounded in the selected cost dtype.
-    Extreme dynamic ranges can still obscure small assignment differences;
-    widening cannot restore costs rounded during input conversion.
-    Finite limits optimize rejection jointly with matching; they are not
-    equivalent to filtering required solutions after solving. Equal-cost
+    Extreme dynamic ranges can still obscure small assignment differences.
+    Float64 working arithmetic cannot restore costs rounded during input conversion.
+
+    Finite limits optimize rejection jointly with matching. This objective is
+    not equivalent to filtering required solutions after solving. Equal-cost
     optima can produce different assignments across solvers or precisions.
 
-    Suitable contiguous arrays are borrowed, and the native solve releases
+    The solver borrows suitable contiguous arrays. The native solve releases
     the GIL. Other inputs may be copied for layout or precision conversion.
     Do not mutate or resize the input or any alias until the call returns.
 

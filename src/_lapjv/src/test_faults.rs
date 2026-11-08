@@ -1,4 +1,4 @@
-//! Fault injection compiled only by `cargo test`, never into Python wheels.
+//! Fault injection compiles only with `cargo test`. Python wheels never include it.
 use crate::Error;
 use std::cell::Cell;
 

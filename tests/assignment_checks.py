@@ -1,4 +1,4 @@
-"""Independent reference and validity checks for public assignment results."""
+"""Check public assignment results for validity and agreement with independent references."""
 from itertools import combinations, permutations
 import numpy as np
 
@@ -41,7 +41,7 @@ def scipy_optimum(cost, limit=np.inf):
 
 
 def small_optimum(cost, limit=np.inf):
-    """Independent bitmask dynamic program for small matrices, without SciPy."""
+    """Find the optimum for small matrices with an independent bitmask dynamic program, without SciPy."""
     n, m = cost.shape
     if n > m:
         return small_optimum(cost.T, limit)
@@ -63,7 +63,7 @@ def small_optimum(cost, limit=np.inf):
 
 
 def exhaustive_optimum(cost, limit=np.inf):
-    """Enumerate matchings, including every rejection cardinality when finite."""
+    """Enumerate matchings, including every rejection cardinality for a finite limit."""
     n, m = cost.shape
     best = np.inf
     counts = range(min(n, m) + 1) if np.isfinite(limit) else [min(n, m)]

@@ -1,4 +1,4 @@
-"""Public API, independence, and installed typing checks."""
+"""Check the public API, package independence, and installed typing information."""
 import doctest
 import importlib
 import inspect

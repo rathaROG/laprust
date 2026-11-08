@@ -1,5 +1,5 @@
 # Copyright (c) 2026 Ratha SIV | MIT License
-"""Preserved tracking and finite-limit fixtures for LAPRUST tests.
+"""Provide preserved tracking and finite-limit fixtures for LAPRUST tests.
 
 Every family is independently seeded. Row/column permutations prevent the
 affordability sample from relying on contiguous blocks. Generation is untimed.
@@ -51,9 +51,9 @@ def conflict_cases(seed=20261031, dtype='float64', sizes=None):
     return cases
 
 def tracking_costs(n, m, seed, dtype):
-    """Same synthetic cost generator as the historical fastlap harness.
+    """Generate synthetic costs with the historical fastlap harness's method.
 
-    These new cases time public solver calls only, without tracking decoration.
+    These cases time only public solver calls, without tracking decoration.
     """
     rng = np.random.default_rng(seed)
     centers = rng.uniform(0, 1000, (n, 2))

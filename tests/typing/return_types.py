@@ -1,4 +1,4 @@
-"""Checked with pyright; exercise every documented return shape."""
+"""Exercise every documented return shape with pyright."""
 from typing import List, Tuple
 import numpy as np
 import laprust

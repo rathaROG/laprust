@@ -153,6 +153,44 @@ def test_inputs_and_default_precision_match_pinned_reference():
     assert args.dtype == "float64" and args.seed == 2026 and args.repeats == 3
 
 
+@pytest.mark.parametrize("installed, loaded", [
+    ("0.12.0", "0.12.0"), ("0.13.0", "0.12.0"), ("0.12.0", "0.13.0"),
+    ("0.9.0", "0.9.0"), ("0.13.0rc1", "0.13.0rc1"),
+    ("0.14.0", "0.13.0"), ("0.13.0", "0.14.0"), ("1.0.0", "0.14.0"),
+])
+def test_environment_rejects_wrong_lapx_distribution_or_shadowed_module(monkeypatch, installed, loaded):
+    monkeypatch.setattr(bench.importlib.metadata, "distribution",
+                        lambda name: SimpleNamespace(version=installed))
+    modules = {"lapx": SimpleNamespace(__version__=loaded)}
+    with pytest.raises(RuntimeError, match=r"require lapx>=0\.13\.0"):
+        bench.environment("single", SimpleNamespace(), modules, {})
+
+
+@pytest.mark.parametrize("installed, loaded", [("unknown", "0.13.0"), ("0.13.0", "unknown")])
+def test_environment_reports_unparseable_lapx_versions(monkeypatch, installed, loaded):
+    monkeypatch.setattr(bench.importlib.metadata, "distribution",
+                        lambda name: SimpleNamespace(version=installed))
+    modules = {"lapx": SimpleNamespace(__version__=loaded)}
+    with pytest.raises(RuntimeError, match="Cannot verify LAPX versions"):
+        bench.environment("single", SimpleNamespace(), modules, {})
+
+
+@pytest.mark.parametrize("installed, loaded", [
+    ("0.13.0", "0.13.0"), ("0.13.1", "0.13.1"), ("0.14.0", "0.14.0"),
+    ("1.0.0", "1.0.0"), ("0.13.0.post1", "0.13.0.post1"), ("0.13.0", "0.13"),
+])
+@pytest.mark.parametrize("provenance", [None, '{"url": "file:///example/lapx"}'])
+def test_environment_accepts_supported_lapx_and_records_actual_provenance(monkeypatch, installed, loaded, provenance):
+    monkeypatch.setattr(bench.importlib.metadata, "distribution", lambda name: SimpleNamespace(
+        version=installed, read_text=lambda filename: provenance))
+    modules = {"lapx": SimpleNamespace(__version__=loaded, __file__="example/lap/__init__.py")}
+    metadata = bench.environment("single", SimpleNamespace(dtype="float64"), modules, {})
+    assert metadata["reference_release"] == "v0.13.0"
+    assert metadata["versions"]["lapx"] == loaded
+    assert metadata["modules"]["lapx"] == "example/lap/__init__.py"
+    assert metadata["lapx_source"] == (None if provenance is None else {"url": "file:///example/lapx"})
+
+
 def test_timing_excludes_generation_warmup_checks_and_dispatch(monkeypatch):
     clock = [0.]
     in_timer = [False]

@@ -1,4 +1,4 @@
-"""Mixed C++/Rust use in one interpreter, including concurrent worker pools."""
+"""Check mixed C++/Rust use in one interpreter, including concurrent worker pools."""
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
 import inspect

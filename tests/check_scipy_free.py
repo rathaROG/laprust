@@ -1,4 +1,4 @@
-"""Run the portable core suite with SciPy imports forbidden, even if installed."""
+"""Run the portable core suite with SciPy imports forbidden, even if SciPy is installed."""
 import importlib.abc
 import os
 from pathlib import Path

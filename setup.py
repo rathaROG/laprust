@@ -47,13 +47,15 @@ class BuildExt(build_ext):
     """Add portable optimization flags for the compiler and linker.
 
     Environment variables control these options:
+
     - LAPRUST_BASEOPTS=0 disables the base flags that LAPRUST adds and link-time
       optimization (LTO). Other compiler defaults may still apply.
     - LAPRUST_NATIVE=1 enables -march=native -mtune=native.
     - LAPRUST_LTO=0 disables LTO, including inherited LTO defaults.
 
     LAPRUST_BASEOPTS=0 does not guarantee an unoptimized or debug build.
-    Native tuning is disabled by default. Strict floating-point arithmetic is always used.
+    Native tuning is disabled by default.
+    The build always uses strict floating-point arithmetic.
     """
     def has_flag(self, flag, link_flag=None):
         import tempfile, os
@@ -217,12 +219,23 @@ def main_setup():
         long_description_content_type="text/markdown",
         author="Ratha SIV", maintainer="rathaROG", license="MIT",
         url="https://github.com/rathaROG/laprust",
+        project_urls={
+            "Documentation": "https://github.com/rathaROG/laprust/blob/main/docs/api.md",
+            "Source": "https://github.com/rathaROG/laprust",
+            "Issues": "https://github.com/rathaROG/laprust/issues",
+            "Changelog": "https://github.com/rathaROG/laprust/blob/main/CHANGELOG.md",
+            "Paper": "https://github.com/rathaROG/lap-paper",
+        },
         license_files=['LICENSE', 'NOTICE', 'tests/LICENSE', 'src/_lapjv/LICENSE', 'src/_lapjv/THIRD_PARTY_NOTICES'],
         packages=["laprust"], package_data={"laprust": ["*.pyi", "py.typed"]},
         include_package_data=True,
         python_requires=">=3.9", install_requires=["numpy>=1.21.6"],
-        extras_require={"test": ["pytest>=7", "scipy>=1.9", "pytest-timeout"],
-                        "benchmark": ["scipy>=1.9", "lapx==0.11.1"], "dev": ["build", "setuptools>=77", "wheel", "pytest>=7", "scipy>=1.9", "pytest-timeout", "pyright"]},
+        extras_require={
+            "test": ["pytest>=7", "scipy>=1.9", "pytest-timeout"],
+            "benchmark": ["scipy>=1.9", "lapcpp>=1.2.0", "lapx>=0.13.0", "packaging>=21.3"],
+            "dev": ["build", "setuptools>=77", "wheel", "pytest>=7",
+                    "scipy>=1.9", "pytest-timeout", "pyright"],
+        },
         classifiers=["Development Status :: 5 - Production/Stable",
                      "Environment :: Console",
                      "Intended Audience :: Developers",
@@ -263,27 +276,30 @@ if __name__ == "__main__":
 
     Source builds need stable Rust and Cargo (https://rustup.rs) in addition to a C++
     compiler. Cargo builds the Rust core in release mode with thin LTO and one codegen
-    unit, and the Cython wrapper links it as a static library.
+    unit. The Cython wrapper links the core as a static library.
 
-    The build applies safe base optimizations automatically:
+    The build applies base optimizations automatically:
+
     - /O2 on MSVC or -O3 on GCC and Clang enables compiler optimizations.
     - -DNDEBUG disables debug assertions.
     - Link-time optimization (LTO) applies when the compiler and linker support it.
-    - Strict floating-point arithmetic (/fp:precise or -fno-fast-math) is always used;
-      there is no fast-math option.
+    - The build always uses strict floating-point arithmetic (/fp:precise or -fno-fast-math).
+      There is no fast-math option.
     - The Windows C++ wrapper uses /std:c++17.
 
     Environment variables control additional options for both the C++ wrapper and Cargo:
-    - LAPRUST_BASEOPTS=0 disables the base flags that LAPRUST adds and LTO, and builds
-      the Rust core with opt-level 0. This produces a much slower solver.
+
+    - LAPRUST_BASEOPTS=0 disables the base flags that LAPRUST adds and LTO.
+      It builds the Rust core with opt-level 0. This produces a much slower solver.
       Other compiler defaults may still apply.
-    - LAPRUST_NATIVE=1 enables -march=native -mtune=native on GCC and Clang, and adds
-      -C target-cpu=native to the Rust core on every platform.
+    - LAPRUST_NATIVE=1 enables -march=native -mtune=native on GCC and Clang.
+      It adds -C target-cpu=native to the Rust core on every platform.
     - LAPRUST_LTO=0 disables LTO for the wrapper and the Rust core, including inherited
       LTO defaults.
 
     LAPRUST_BASEOPTS=0 does not guarantee an unoptimized or debug build.
-    Native tuning is disabled by default. Keep it disabled for portable release wheels.
+    Native tuning is disabled by default.
+    For portable release wheels, keep native tuning disabled.
 
     To build with native tuning on Linux or macOS, use this command:
     >>> LAPRUST_NATIVE=1 python -m build --wheel

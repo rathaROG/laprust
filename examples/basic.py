@@ -1,4 +1,4 @@
-"""Run after installing laprust."""
+"""After you install laprust, run this example."""
 import numpy as np
 import laprust
 

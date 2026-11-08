@@ -1,4 +1,4 @@
-"""Time full assignment, post-filtering and unmatched lists, as in pinned LAPX."""
+"""Time full assignment, post-filtering and unmatched lists with the reference LAPX settings."""
 from functools import partial
 
 import lap
@@ -13,7 +13,7 @@ from _common import (assert_same_pairs, cases, checked_cost, common_parser, envi
 
 
 def _decorate_return(n_rows, n_cols, matches):
-    """Same output construction as LAPX v0.11.1's tracking benchmark."""
+    """Construct output as in LAPX v0.13.0's tracking benchmark."""
     matches = np.asarray(matches)
     if matches.size == 0:
         matches = np.empty((0, 2), dtype=int)

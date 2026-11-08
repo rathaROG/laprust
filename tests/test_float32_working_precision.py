@@ -1,4 +1,4 @@
-"""Exact regressions for cancellation in rectangular and finite-limit solving.
+"""Check exact regressions for cancellation in rectangular and finite-limit solving.
 
 Input entries are exact binary fractions. Small exhaustive references distinguish
 the represented optimization objective from totals on the original input.

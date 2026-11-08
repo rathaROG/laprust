@@ -5,7 +5,7 @@ The square Jonker-Volgenant implementation derives from source{d}/lapjv
 and carries the copyright of Vadim Markovtsev (2016). Native rectangular
 assignment, implicit rejection handling, adapters and batch execution derive
 from Ratha SIV's LAPX work (2026). See src/_lapjv/LICENSE for the full MIT text.
-The top-level LICENSE covers this package. Neither package requires LAPX.
+The top-level LICENSE covers this package. laprust does not require LAPX at runtime.
 
 Rust dependencies and their notices are listed in src/_lapjv/THIRD_PARTY_NOTICES.
 

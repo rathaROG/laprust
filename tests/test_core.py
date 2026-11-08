@@ -1,4 +1,4 @@
-"""Small independent numerical references for every wheel, including ARMv7.
+"""Check every wheel, including ARMv7, against small independent numerical references.
 
 Keep this module and assignment_checks importable without SciPy. These cases
 exercise all native solve paths and return layouts, not just successful imports.

@@ -1,4 +1,4 @@
-"""Run from outside the repository package directory after installing a wheel."""
+"""After installing a wheel, run this check from outside the repository package directory."""
 from pathlib import Path
 import importlib.metadata
 import numpy as np
