@@ -1,7 +1,7 @@
 """Solve linear assignment problems with native Rust, implicit rejection, and batch solving."""
 from ._lapjv import lapjv, lapjv_batch
 
-__version__ = "1.2.0"
+__version__ = "1.2.1"
 __author__ = 'Ratha SIV'
 __description__ = 'Native Rust linear assignment solvers with implicit rejection and batch solving.'
 __homepage__ = 'https://github.com/rathaROG/laprust'

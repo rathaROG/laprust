@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.2.1 - 2026-11-08
 
 - Require LAPX 0.13.0 or newer for all package benchmarks.
 - Record and check the installed LAPX version.
